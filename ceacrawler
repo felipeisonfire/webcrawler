@@ -1,0 +1,56 @@
+import requests
+from bs4 import BeautifulSoup
+import pandas as pd
+
+baseurl = 'https://www.cea.com.br/'
+
+
+productlinks = []
+        
+        #LOOP QUANTIDADE DE PAGINAS
+for page_list in range(0,1):
+        r = requests.get(f'https://www.cea.com.br/calcados?O=vtexscore%20desc&filters=[]&pageNumber={page_list}')
+        soup = BeautifulSoup(r.content, 'lxml')
+        productlist = soup.find_all('div', {'class':'product-details'})        
+        for item in productlist:
+            for link in item.find_all('a', {'href':True}):
+                productlinks.append(link['href'])
+                
+#testlink = 'https://www.thewhiskyexchange.com/p/51084/ichiros-malt-grain-world-blended-whisky-2018-limited-edition'
+
+whiskylist = []
+for link in productlinks:
+    r = requests.get(link)
+    soup = BeautifulSoup(r.content, 'lxml')
+
+    try:
+        name = soup.find('h1', {'class':'cea-cea-store-theme-0-x-product-title f5 fw7 ttl lh-title mt0 mb3'}).text.strip()
+    except:
+        name = 'no name'
+    try:    
+        preco_de = soup.find('p', {'class':'cea-cea-store-theme-0-x-product-price__list-price f6 strike ma0'}).text
+    except:
+        preco_de = 'no preco_de'
+    try:    
+        preco_para = soup.find('strong', {'class':'cea-cea-store-theme-0-x-product-price__sku-price'}).text.strip()
+    except:
+        preco_para = 'no preco_para'
+    try:    
+        modelo_cor = soup.find('p', {'class':'cea-cea-store-theme-0-x-product-description__text ma0'}).text.strip()
+    except:
+        modelo_cor = 'no modelo_cor'        
+
+    
+    whisky = {
+        'name': name,
+        'preco_de': preco_de,
+        'preco_para': preco_para,
+        'modelo_cor': modelo_cor
+        }
+
+    whiskylist.append(whisky)
+    print('saving: ', whisky['name'])
+    
+df = pd.DataFrame(whiskylist)
+print(df.head(15))
+df.to_csv (r'export.csv', index = False, header=True) 
